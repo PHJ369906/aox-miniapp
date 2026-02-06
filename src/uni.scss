@@ -1,0 +1,98 @@
+/* 颜色变量 */
+$primary-color: #0891b2;
+$primary-strong: #0e7490;
+$secondary-color: #22d3ee;
+$accent-color: #22c55e;
+$success-color: #22c55e;
+$warning-color: #f59e0b;
+$error-color: #ef4444;
+$text-color: #0f172a;
+$text-color-secondary: #475569;
+$text-color-placeholder: #94a3b8;
+$border-color: #e2e8f0;
+$bg-color: #f8fafc;
+$surface-color: #ffffff;
+$shadow-sm: 0 8rpx 20rpx rgba(15, 23, 42, 0.08);
+$shadow-xs: 0 4rpx 12rpx rgba(15, 23, 42, 0.06);
+
+/* 间距 */
+$spacing-xs: 8rpx;
+$spacing-sm: 16rpx;
+$spacing-md: 24rpx;
+$spacing-lg: 32rpx;
+$spacing-xl: 40rpx;
+
+/* 圆角 */
+$border-radius-sm: 4rpx;
+$border-radius-md: 8rpx;
+$border-radius-lg: 16rpx;
+
+/* 通用样式 */
+.container {
+  padding: $spacing-md;
+}
+
+.card {
+  background-color: $surface-color;
+  border-radius: $border-radius-lg;
+  border: 1rpx solid $border-color;
+  box-shadow: $shadow-xs;
+}
+
+.section-title {
+  font-size: 28rpx;
+  color: $text-color-secondary;
+  margin-bottom: 16rpx;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-primary {
+  color: $primary-color;
+}
+
+.text-secondary {
+  color: $text-color-secondary;
+}
+
+.mt-sm {
+  margin-top: $spacing-sm;
+}
+
+.mt-md {
+  margin-top: $spacing-md;
+}
+
+.mt-lg {
+  margin-top: $spacing-lg;
+}
+
+.mb-sm {
+  margin-bottom: $spacing-sm;
+}
+
+.mb-md {
+  margin-bottom: $spacing-md;
+}
+
+.mb-lg {
+  margin-bottom: $spacing-lg;
+}
