@@ -60,7 +60,6 @@
 
         <button
           class="login-btn"
-          type="primary"
           @tap="handlePasswordLogin"
           :loading="loading"
           :disabled="!passwordForm.username || !passwordForm.password"
@@ -110,7 +109,6 @@
 
         <button
           class="login-btn"
-          type="primary"
           @tap="handleSmsLogin"
           :loading="loading"
           :disabled="!smsForm.phone || !smsForm.code"
@@ -143,9 +141,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { passwordLogin, smsLogin, sendSmsCode, wxLogin } from '@/api/user'
+import type { UserInfo } from '@/api/user'
 
 const userStore = useUserStore()
 
@@ -170,6 +169,92 @@ const smsForm = ref({
 // 验证码倒计时
 const countdown = ref(0)
 let countdownTimer: number | null = null
+
+/**
+ * 兼容不同后端字段名，提取 token
+ */
+const resolveLoginToken = (res: any): string => {
+  const token =
+    res?.tokens?.accessToken ||
+    res?.tokens?.token ||
+    res?.accessToken ||
+    res?.token ||
+    res?.authToken ||
+    res?.jwt ||
+    res?.jwtToken ||
+    res?.data?.tokens?.accessToken ||
+    res?.data?.tokens?.token ||
+    res?.data?.accessToken ||
+    res?.data?.token ||
+    res?.access_token ||
+    res?.data?.access_token
+  if (typeof token !== 'string') {
+    return ''
+  }
+  return token
+    .trim()
+    .replace(/^"(.*)"$/, '$1')
+    .replace(/^'(.*)'$/, '$1')
+    .trim()
+}
+
+const resolveLoginUserInfo = (res: any): UserInfo | null => {
+  const rawUser = res?.user || res?.userInfo || res?.data?.user || res?.data?.userInfo
+  if (!rawUser || typeof rawUser !== 'object') {
+    return null
+  }
+
+  const userId = Number(rawUser.userId ?? rawUser.id ?? 0)
+  if (!userId) {
+    return null
+  }
+
+  return {
+    userId,
+    openid: rawUser.openid,
+    nickname: rawUser.nickname || rawUser.nickName || '',
+    avatar: rawUser.avatar || rawUser.avatarUrl || '',
+    gender: Number(rawUser.gender ?? 0),
+    phone: rawUser.phone || '',
+    country: rawUser.country,
+    province: rawUser.province,
+    city: rawUser.city,
+  }
+}
+
+const goHome = () => {
+  uni.switchTab({
+    url: '/pages/index/index',
+    fail: (err) => {
+      console.error('切换首页失败:', err)
+      uni.reLaunch({
+        url: '/pages/index/index',
+      })
+    },
+  })
+}
+
+/**
+ * 微信游客 AppID 下不支持完整登录能力
+ */
+const isTouristWeChatAppId = () => {
+  // 仅在微信小程序平台检查
+  // #ifdef MP-WEIXIN
+  try {
+    const getAccountInfoSync = (uni as any).getAccountInfoSync
+    if (typeof getAccountInfoSync !== 'function') {
+      return false
+    }
+    const accountInfo = getAccountInfoSync()
+    const appId = accountInfo?.miniProgram?.appId
+    return !appId || appId === 'touristappid'
+  } catch (error) {
+    console.warn('读取小程序 AppID 失败:', error)
+    return false
+  }
+  // #endif
+  return false
+}
 
 // 切换登录方式
 const switchLoginType = (type: 'password' | 'sms') => {
@@ -201,8 +286,16 @@ const handlePasswordLogin = async () => {
       password: passwordForm.value.password,
     })
 
+    const token = resolveLoginToken(res)
+    if (!token) {
+      throw new Error('登录响应缺少 token')
+    }
+
     // 保存 token 和用户信息
-    await userStore.login(res.token)
+    await userStore.login(token, resolveLoginUserInfo(res))
+    if (!userStore.isLogin) {
+      throw new Error('登录状态校验失败，请重试')
+    }
 
     uni.showToast({
       title: '登录成功',
@@ -210,9 +303,7 @@ const handlePasswordLogin = async () => {
     })
 
     setTimeout(() => {
-      uni.switchTab({
-        url: '/pages/index/index',
-      })
+      goHome()
     }, 1000)
   } catch (error: any) {
     uni.showToast({
@@ -281,8 +372,16 @@ const handleSmsLogin = async () => {
       code: smsForm.value.code,
     })
 
+    const token = resolveLoginToken(res)
+    if (!token) {
+      throw new Error('登录响应缺少 token')
+    }
+
     // 保存 token 和用户信息
-    await userStore.login(res.token)
+    await userStore.login(token, resolveLoginUserInfo(res))
+    if (!userStore.isLogin) {
+      throw new Error('登录状态校验失败，请重试')
+    }
 
     uni.showToast({
       title: '登录成功',
@@ -290,9 +389,7 @@ const handleSmsLogin = async () => {
     })
 
     setTimeout(() => {
-      uni.switchTab({
-        url: '/pages/index/index',
-      })
+      goHome()
     }, 1000)
   } catch (error: any) {
     uni.showToast({
@@ -308,6 +405,15 @@ const handleSmsLogin = async () => {
  * 微信登录
  */
 const handleWxLogin = () => {
+  if (isTouristWeChatAppId()) {
+    uni.showModal({
+      title: '无法使用微信登录',
+      content: '当前是游客模式（touristappid），请在 manifest.json 配置真实微信小程序 AppID 后重试。',
+      showCancel: false,
+    })
+    return
+  }
+
   wxLoading.value = true
 
   // 1. 获取微信登录 code
@@ -330,8 +436,16 @@ const handleWxLogin = () => {
                 userInfo: infoRes.userInfo,
               })
 
+              const token = resolveLoginToken(res)
+              if (!token) {
+                throw new Error('登录响应缺少 token')
+              }
+
               // 4. 保存 token 和用户信息
-              await userStore.login(res.token)
+              await userStore.login(token, resolveLoginUserInfo(res))
+              if (!userStore.isLogin) {
+                throw new Error('登录状态校验失败，请重试')
+              }
 
               uni.showToast({
                 title: '登录成功',
@@ -339,9 +453,7 @@ const handleWxLogin = () => {
               })
 
               setTimeout(() => {
-                uni.switchTab({
-                  url: '/pages/index/index',
-                })
+                goHome()
               }, 1000)
             } catch (error: any) {
               console.error('登录失败:', error)
@@ -397,7 +509,6 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/uni.scss" as *;
 
 .login-container {
   min-height: 100vh;

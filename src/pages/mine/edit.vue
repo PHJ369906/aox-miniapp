@@ -60,7 +60,7 @@
 
     <!-- 保存按钮 -->
     <view class="save-section">
-      <button class="save-btn" type="primary" @tap="handleSave" :loading="loading">
+      <button class="save-btn" @tap="handleSave" :loading="loading">
         保存
       </button>
     </view>
@@ -228,7 +228,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/uni.scss" as *;
 
 .edit-container {
   min-height: 100vh;

@@ -70,7 +70,6 @@ const handleAction = () => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/uni.scss" as *;
 
 .aox-empty {
   display: flex;

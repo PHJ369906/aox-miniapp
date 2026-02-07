@@ -37,7 +37,10 @@ const loadDetail = async (noticeId?: number) => {
     } catch (error) {
       console.warn('上报阅读失败:', error)
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message?.includes('未登录') || error?.message?.includes('token已过期')) {
+      return
+    }
     uni.showToast({
       title: '加载公告失败',
       icon: 'none',
@@ -66,7 +69,6 @@ onLoad((query) => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/uni.scss" as *;
 
 .detail-container {
   padding: 24rpx;

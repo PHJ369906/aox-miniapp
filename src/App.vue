@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { useUserStore } from '@/store/user'
 
 onLaunch(() => {
+  try {
+    // 启动时恢复本地登录态
+    const userStore = useUserStore()
+    userStore.init()
+  } catch (error) {
+    console.error('初始化用户状态失败:', error)
+  }
+
   console.log('App Launch')
 })
 
@@ -15,8 +24,6 @@ onHide(() => {
 </script>
 
 <style lang="scss">
-@use "@/uni.scss" as *;
-
 page {
   background-color: $bg-color;
   color: $text-color;

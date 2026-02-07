@@ -9,13 +9,31 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(null)
   const isLogin = ref<boolean>(false)
 
+  const isAuthExpiredError = (error: any) => {
+    const message = String(error?.message || '')
+    return message.includes('未登录') || message.includes('token已过期') || message.includes('401')
+  }
+
+  const normalizeToken = (input: string) => {
+    const token = String(input || '').trim()
+    return token
+      .replace(/^"(.*)"$/, '$1')
+      .replace(/^'(.*)'$/, '$1')
+      .trim()
+  }
+
   /**
    * 设置 Token
    */
   function setToken(newToken: string) {
-    token.value = newToken
-    isLogin.value = !!newToken
-    uni.setStorageSync('token', newToken)
+    const normalized = normalizeToken(newToken)
+    token.value = normalized
+    isLogin.value = !!normalized
+    if (normalized) {
+      uni.setStorageSync('token', normalized)
+    } else {
+      uni.removeStorageSync('token')
+    }
   }
 
   /**
@@ -29,9 +47,19 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 登录
    */
-  async function login(newToken: string) {
+  async function login(newToken: string, loginUserInfo?: UserInfo | null) {
     setToken(newToken)
-    await fetchUserInfo()
+
+    if (loginUserInfo) {
+      setUserInfo(loginUserInfo)
+    }
+
+    // 无论登录响应是否包含用户信息，都校验一次 token 可用性
+    const ok = await fetchUserInfo()
+    if (!ok) {
+      clearAuthState()
+      throw new Error('未登录或token已过期')
+    }
   }
 
   /**
@@ -41,20 +69,31 @@ export const useUserStore = defineStore('user', () => {
     try {
       const info = await getUserInfo()
       setUserInfo(info)
+      return true
     } catch (error) {
-      console.error('获取用户信息失败:', error)
+      if (!isAuthExpiredError(error)) {
+        console.error('获取用户信息失败:', error)
+      }
+      return false
     }
+  }
+
+  /**
+   * 清理登录状态
+   */
+  function clearAuthState() {
+    token.value = ''
+    userInfo.value = null
+    isLogin.value = false
+    uni.removeStorageSync('token')
+    uni.removeStorageSync('userInfo')
   }
 
   /**
    * 登出
    */
   function logout() {
-    token.value = ''
-    userInfo.value = null
-    isLogin.value = false
-    uni.removeStorageSync('token')
-    uni.removeStorageSync('userInfo')
+    clearAuthState()
     uni.reLaunch({
       url: '/pages/login/login',
     })
@@ -85,6 +124,7 @@ export const useUserStore = defineStore('user', () => {
     setUserInfo,
     login,
     logout,
+    clearAuthState,
     fetchUserInfo,
     init,
   }

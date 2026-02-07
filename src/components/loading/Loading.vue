@@ -44,7 +44,6 @@ const spinnerClass = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/uni.scss" as *;
 
 .aox-loading {
   display: flex;

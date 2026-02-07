@@ -79,7 +79,10 @@ const loadBanners = async () => {
   try {
     const banners = await getBannerList()
     bannerList.value = banners || []
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message?.includes('未登录') || error?.message?.includes('token已过期')) {
+      return
+    }
     console.error('加载Banner失败:', error)
   }
 }
@@ -89,7 +92,10 @@ const loadNotices = async () => {
   try {
     const notices = await getLatestNotices(5)
     noticeList.value = notices || []
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message?.includes('未登录') || error?.message?.includes('token已过期')) {
+      return
+    }
     console.error('加载公告失败:', error)
   }
 }
@@ -175,7 +181,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/uni.scss" as *;
 
 .index-container {
   min-height: 100vh;
