@@ -9,12 +9,14 @@ import { useUserStore } from '@/store/user'
  * 需要登录的页面路径
  */
 const AUTH_PAGES = [
-  '/pages/user/index',
-  '/pages/order/index',
-  '/pages/order/detail',
-  '/pages/address/index',
-  '/pages/address/edit',
-  '/pages/message/index',
+  '/pages/mine/mine',
+  '/pages/mine/edit',
+  '/pages/order/list',
+  '/pages/favorite/list',
+  '/pages/address/list',
+  '/pages/address/form',
+  '/pages/message/list',
+  '/pages/setting/security',
 ]
 
 /**
@@ -23,7 +25,9 @@ const AUTH_PAGES = [
 const WHITE_LIST = [
   '/pages/index/index',
   '/pages/login/login',
-  '/pages/category/index',
+  '/pages/notice/detail',
+  '/pages/setting/privacy',
+  '/pages/setting/about',
 ]
 
 /**
