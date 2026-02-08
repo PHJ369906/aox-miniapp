@@ -2,7 +2,7 @@
  * HTTP 请求配置
  */
 
-const BASE_URL = 'http://localhost:8080/api'
+const BASE_URL = import.meta.env.VITE_APP_BASE_API || 'http://localhost:8080/api'
 let isRedirectingToLogin = false
 
 interface RequestConfig {
